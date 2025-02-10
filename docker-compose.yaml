@@ -1,0 +1,13 @@
+version: "3.8"
+
+services:
+  pgdatabase:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_DB=kata
+    volumes:
+      - "./kata_data:/var/lib/postgresql/data:rw"
+    ports:
+      - "5434:5432"
