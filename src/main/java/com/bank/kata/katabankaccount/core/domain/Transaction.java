@@ -22,6 +22,8 @@ import lombok.Setter;
 import org.hibernate.annotations.JdbcType;
 import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 
+import java.time.ZonedDateTime;
+
 @Builder
 @Getter
 @Setter
@@ -35,15 +37,18 @@ public class Transaction {
     private Long id;
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "transaction_type")
+    @Column(columnDefinition = "transaction_type", nullable = false)
     @JdbcType(PostgreSQLEnumJdbcType.class)
     private TransactionType type;
 
     private String description;
 
     @Convert(converter = AmountConverter.class)
-    @Column(precision = 19, scale = 2)
+    @Column(precision = 19, scale = 2, nullable = false)
     private Amount amount;
+
+    @Column(nullable = false)
+    private ZonedDateTime transactionTime;
 
     @ManyToOne
     @JoinColumn(name = "account_id")

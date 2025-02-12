@@ -5,6 +5,7 @@ import com.bank.kata.katabankaccount.core.domain.Account;
 import com.bank.kata.katabankaccount.core.domain.Client;
 import com.bank.kata.katabankaccount.core.domain.Transaction;
 import com.bank.kata.katabankaccount.core.enums.TransactionType;
+import com.bank.kata.katabankaccount.core.exceptions.DataNotFoundException;
 import com.bank.kata.katabankaccount.core.gateways.AccountGateway;
 import com.bank.kata.katabankaccount.core.gateways.ClientGateway;
 import com.bank.kata.katabankaccount.core.valueobjects.Amount;
@@ -23,7 +24,7 @@ public class DataLoader implements CommandLineRunner {
     private final TransactionService transactionService;
 
     @Override
-    public void run(String... args) {
+    public void run(String... args) throws DataNotFoundException {
         // Create and save client
         Client client = Client.builder()
                 .firstName("TOTO")

@@ -1,130 +1,121 @@
 package com.bank.kata.katabankaccount.core.services;
 
-import com.bank.kata.katabankaccount.TestContainersConfig;
 import com.bank.kata.katabankaccount.core.domain.Account;
-import com.bank.kata.katabankaccount.core.domain.Client;
 import com.bank.kata.katabankaccount.core.domain.Transaction;
 import com.bank.kata.katabankaccount.core.enums.TransactionType;
+import com.bank.kata.katabankaccount.core.exceptions.DataNotFoundException;
+import com.bank.kata.katabankaccount.core.exceptions.InsufficientBalanceException;
 import com.bank.kata.katabankaccount.core.gateways.AccountGateway;
-import com.bank.kata.katabankaccount.core.gateways.ClientGateway;
 import com.bank.kata.katabankaccount.core.gateways.TransactionGateway;
 import com.bank.kata.katabankaccount.core.valueobjects.Amount;
-import com.bank.kata.katabankaccount.factories.AccountFactory;
-import com.bank.kata.katabankaccount.factories.TransactionFactory;
-import jakarta.transaction.Transactional;
-import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
-import org.testcontainers.junit.jupiter.Testcontainers;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
-import java.util.List;
+import java.util.Optional;
 
-import static com.bank.kata.katabankaccount.core.enums.TransactionType.DEPOSIT;
-import static com.bank.kata.katabankaccount.core.enums.TransactionType.WITHDRAW;
-import static com.bank.kata.katabankaccount.factories.AccountFactory.createTestAccount;
-import static com.bank.kata.katabankaccount.factories.ClientFactory.createTestClient;
-import static org.assertj.core.groups.Tuple.tuple;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-@Transactional
-@SpringBootTest
-class TransactionServiceTest extends TestContainersConfig{
+@ExtendWith(MockitoExtension.class)
+class TransactionServiceTest {
 
-    @Autowired private ClientGateway clientGateway;
-    @Autowired private TransactionGateway transactionGateway;
-    @Autowired private AccountGateway accountGateway;
-    @Autowired private AccountService accountService;
-    @Autowired private TransactionService sut;
+    @Mock
+    private AccountGateway accountGateway;
 
-    Client client;
+    @Mock
+    private TransactionGateway transactionGateway;
 
-    @BeforeEach
-    void setUp() {
-        client = createTestClient("toto", "toto", 31, "FAKE ADDRESS");
-    }
-
+    @InjectMocks
+    private TransactionService transactionService;
 
     @Test
-    void should_addTransactionAndUpdateAccountBalance_whenMakingADeposit() {
-        // Create a client
-        Client savedClient = clientGateway.createOrUpdate(client);
-        assertNotNull(savedClient.getId());
+    void should_createTransactionSuccessfully_when_accountExists() throws DataNotFoundException {
+        // Arrange
+        Long accountId = 1L;
+        Amount initialBalance = new Amount(new BigDecimal("1000.00"));
+        Amount transactionAmount = new Amount(new BigDecimal("100.00"));
 
-        // Create an account for the client
-        Account account = AccountFactory.createTestAccount(savedClient, new BigDecimal("1000.0"));
-        Account savedAccount = accountService.createAccount(client.getId(), account);
+        Account account = Account.builder()
+                .id(accountId)
+                .balance(initialBalance)
+                .build();
 
-        assertNotNull(savedAccount.getId());
-        assertEquals(Amount.of(BigDecimal.valueOf(1000.00)), savedAccount.getBalance());
+        Transaction transaction = Transaction.builder()
+                .amount(transactionAmount)
+                .type(TransactionType.DEPOSIT)
+                .build();
 
-        // Create a transaction
-        Transaction transaction = TransactionFactory.createTransaction(savedAccount, TransactionType.DEPOSIT, "Initial deposit", BigDecimal.valueOf(500.0));
+        Amount expectedNewBalance = new Amount(new BigDecimal("1100.00"));
 
-        Transaction savedTransaction = sut.createTransaction(savedAccount.getId(), transaction);
+        when(accountGateway.search(accountId)).thenReturn(Optional.of(account));
+        when(accountGateway.createOrUpdate(any(Account.class))).thenReturn(account);
+        when(transactionGateway.createOrUpdate(any(Transaction.class))).thenReturn(transaction);
 
-        assertNotNull(savedTransaction.getId());
-        assertEquals(Amount.of(BigDecimal.valueOf(500.00)), savedTransaction.getAmount());
+        // Act
+        Transaction result = transactionService.createTransaction(accountId, transaction);
 
-        // Verify account balance update
-        Account updatedAccount = accountGateway.search(savedAccount.getId()).orElseThrow();
-        assertEquals(Amount.of(BigDecimal.valueOf(1500.00)), updatedAccount.getBalance());
+        // Assert
+        assertNotNull(result);
+        assertEquals(account, result.getAccount());
+        assertEquals(expectedNewBalance, account.getBalance());
 
-        // Verify transaction list
-        List<Transaction> transactions = transactionGateway.searchByAccountId(savedAccount.getId());
-        assertEquals(1, transactions.size());
-        assertEquals(TransactionType.DEPOSIT, transactions.getFirst().getType());
+        verify(accountGateway).search(accountId);
+        verify(accountGateway).createOrUpdate(account);
+        verify(transactionGateway).createOrUpdate(transaction);
     }
 
     @Test
-    void should_ChangeAccountBalance_when_MakingMultipleTypeOfTransactions() {
-        // Create client and account
-        Client client = clientGateway.createOrUpdate(createTestClient("toto", "toto", 31, "FAKE ADDRESS"));
-        Account account = accountService.createAccount(client.getId(), createTestAccount(client, BigDecimal.valueOf(2000)));
+    void should_failTransactionCreation_when_accountBalanceIsInsufficient() {
+        // Arrange
+        Long accountId = 1L;
+        Amount initialBalance = Amount.zero();
+        Amount transactionAmount = new Amount(new BigDecimal("100.00"));
 
-        // Perform multiple transactions
-        Long accountId = account.getId();
+        Account account = Account.builder()
+                .id(accountId)
+                .balance(initialBalance)
+                .build();
 
-        sut.createTransaction(
-                accountId,
-                TransactionFactory.createTransaction(
-                        account, WITHDRAW, "ATM Withdrawal", BigDecimal.valueOf(500)
-                )
-        );
-        sut.createTransaction(
-                accountId,
-                TransactionFactory.createTransaction(
-                        account, TransactionType.DEPOSIT, "Salary", BigDecimal.valueOf(3000)
-                )
-        );
-        sut.createTransaction(
-                accountId,
-                TransactionFactory.createTransaction(
-                        account, WITHDRAW, "Online Payment", BigDecimal.valueOf(200)
-                )
+        Transaction transaction = Transaction.builder()
+                .amount(transactionAmount)
+                .type(TransactionType.WITHDRAW)
+                .build();
+
+        when(accountGateway.search(accountId)).thenReturn(Optional.of(account));
+
+        // Act
+        assertThrows(InsufficientBalanceException.class, () ->
+                transactionService.createTransaction(accountId, transaction)
         );
 
-        // Verify global balance
-        Account updatedAccount = accountGateway.search(accountId).orElseThrow();
-        assertEquals(account, updatedAccount);
-        assertEquals(Amount.of(new BigDecimal("4300.00")), updatedAccount.getBalance());
+        // Assert
+        verify(accountGateway).search(accountId);
+        verify(accountGateway, never()).createOrUpdate(account);
+        verify(transactionGateway, never()).createOrUpdate(transaction);
+    }
 
-        // Verify transaction history
-        List<Transaction> transactions = transactionGateway.searchByAccountId(accountId);
-        Assertions.assertThat(transactions)
-                .hasSize(3)
-                .extracting("type", "amount")
-                .containsExactlyInAnyOrderElementsOf(
-                        List.of(
-                                tuple(WITHDRAW, Amount.of(BigDecimal.valueOf(500.00))),
-                                tuple(DEPOSIT, Amount.of(BigDecimal.valueOf(3000.00))),
-                                tuple(WITHDRAW, Amount.of(BigDecimal.valueOf(200.00)))
-                        )
-                );
+    @Test
+    void should_throwAccountNotFoundException_when_clientHasNoAccount() {
+        // Arrange
+        Long accountId = 1L;
+        Transaction transaction = new Transaction();
+
+        when(accountGateway.search(accountId)).thenReturn(Optional.empty());
+
+        // Act + assert
+        assertThrows(DataNotFoundException.class, () ->
+                transactionService.createTransaction(accountId, transaction)
+        );
+
+        verify(accountGateway).search(accountId);
+        verify(accountGateway, never()).createOrUpdate(any());
+        verify(transactionGateway, never()).createOrUpdate(any());
     }
 }

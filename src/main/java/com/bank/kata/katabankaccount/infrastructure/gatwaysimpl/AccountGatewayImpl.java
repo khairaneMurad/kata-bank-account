@@ -1,7 +1,7 @@
 package com.bank.kata.katabankaccount.infrastructure.gatwaysimpl;
 
 import com.bank.kata.katabankaccount.core.domain.Account;
-import com.bank.kata.katabankaccount.core.domain.AccountStatementDTO;
+import com.bank.kata.katabankaccount.core.domain.AccountStatement;
 import com.bank.kata.katabankaccount.core.gateways.AccountGateway;
 import com.bank.kata.katabankaccount.infrastructure.repositories.AccountRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +26,7 @@ public class AccountGatewayImpl implements AccountGateway {
         return accountRepository.findById(accountId);
     }
 
-    public List<AccountStatementDTO> getAccountStatement(Long accountId) {
+    public List<AccountStatement> getAccountStatement(Long accountId) {
         return accountRepository.fetchAccountStatement(accountId);
     }
 }

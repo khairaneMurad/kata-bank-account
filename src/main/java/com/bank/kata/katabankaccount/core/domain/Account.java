@@ -31,10 +31,11 @@ public class Account {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private String type;
 
     @Convert(converter = AmountConverter.class)
-    @Column(precision = 19, scale = 2)
+    @Column(precision = 19, scale = 2, nullable = false)
     private Amount balance;
 
     @ManyToOne(fetch = FetchType.LAZY)

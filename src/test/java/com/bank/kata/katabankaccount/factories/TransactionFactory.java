@@ -6,6 +6,7 @@ import com.bank.kata.katabankaccount.core.enums.TransactionType;
 import com.bank.kata.katabankaccount.core.valueobjects.Amount;
 
 import java.math.BigDecimal;
+import java.time.ZonedDateTime;
 
 public class TransactionFactory {
     public static Transaction createTransaction(Account account, TransactionType type, String description, BigDecimal amount) {
@@ -13,6 +14,7 @@ public class TransactionFactory {
         transaction.setType(type);
         transaction.setDescription(description);
         transaction.setAmount(Amount.of(amount));
+        transaction.setTransactionTime(ZonedDateTime.now());
         transaction.setAccount(account);
         return transaction;
     }

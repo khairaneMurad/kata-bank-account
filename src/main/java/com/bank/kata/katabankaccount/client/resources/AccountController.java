@@ -1,9 +1,14 @@
 package com.bank.kata.katabankaccount.client.resources;
 
+import com.bank.kata.katabankaccount.client.dtos.AccountDTO;
+import com.bank.kata.katabankaccount.client.dtos.AccountStatementDTO;
 import com.bank.kata.katabankaccount.client.dtos.TransactionDTO;
+import com.bank.kata.katabankaccount.client.mappers.AccountMapper;
+import com.bank.kata.katabankaccount.client.mappers.AccountStatementMapper;
 import com.bank.kata.katabankaccount.client.mappers.TransactionMapper;
-import com.bank.kata.katabankaccount.core.domain.AccountStatementDTO;
+import com.bank.kata.katabankaccount.core.domain.Account;
 import com.bank.kata.katabankaccount.core.domain.Transaction;
+import com.bank.kata.katabankaccount.core.exceptions.DataNotFoundException;
 import com.bank.kata.katabankaccount.core.services.AccountService;
 import com.bank.kata.katabankaccount.core.services.TransactionService;
 import lombok.RequiredArgsConstructor;
@@ -26,12 +31,24 @@ public class AccountController {
     private final AccountService accountService;
     private final TransactionService transactionService;
     private final TransactionMapper transactionMapper;
+    private final AccountMapper accountMapper;
+    private final AccountStatementMapper accountStatementMapper;
 
-    @PostMapping("/{accountId}/transaction")
+
+    @PostMapping
+    public ResponseEntity<AccountDTO> createAccount(
+            @RequestBody AccountDTO accountDTO) throws DataNotFoundException {
+        Account account = accountMapper.toAccount(accountDTO);
+        AccountDTO createdAccount = accountMapper.toAccountResponse(
+                accountService.createAccount(accountDTO.clientId(), account)
+        );
+        return new ResponseEntity<>(createdAccount, CREATED);
+    }
+
+    @PostMapping("/{accountId}/transactions")
     public ResponseEntity<TransactionDTO> createTransaction(
             @PathVariable Long accountId,
-            @RequestBody TransactionDTO transactionDTO) {
-        transactionDTO.setId(null);
+            @RequestBody TransactionDTO transactionDTO) throws DataNotFoundException {
         Transaction transaction = transactionMapper.toTransaction(transactionDTO);
         TransactionDTO createdTransaction = transactionMapper.toTransactionResponse(
                 transactionService.createTransaction(accountId, transaction)
@@ -39,9 +56,11 @@ public class AccountController {
         return new ResponseEntity<>(createdTransaction, CREATED);
     }
 
-    @GetMapping("/{accountId}/statement")
+    @GetMapping("/{accountId}/statements")
     public ResponseEntity<List<AccountStatementDTO>> getAccountStatement(@PathVariable Long accountId) {
-        List<AccountStatementDTO> statement = accountService.printAccountStatement(accountId);
+        List<AccountStatementDTO> statement = accountService.printAccountStatement(accountId)
+                        .stream().map(accountStatementMapper::toResponse)
+                        .toList();
         return ResponseEntity.ok(statement);
     }
 }

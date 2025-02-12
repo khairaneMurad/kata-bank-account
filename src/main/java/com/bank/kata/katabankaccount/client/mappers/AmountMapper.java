@@ -8,7 +8,7 @@ import java.math.BigDecimal;
 @Mapper(componentModel = "spring")
 public interface AmountMapper {
     default BigDecimal toBigDecimal(Amount amount) {
-        return amount != null ? amount.getAmount() : null;
+        return amount != null ? amount.amount() : null;
     }
 
     default Amount toAmount(BigDecimal value) {

@@ -1,20 +1,11 @@
 package com.bank.kata.katabankaccount.client.dtos;
 
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-
 import java.math.BigDecimal;
+import java.time.ZonedDateTime;
 
-@Builder
-@Getter
-@Setter
-public class TransactionDTO {
-    private Long id;
-    private String type;
-    private BigDecimal amount;
-    private String description;
-    private Long accountId;
-    private Long clientId;
-    private BigDecimal balanceAfterTransaction;
+
+public record TransactionDTO(Long id, String type, BigDecimal amount, String description, ZonedDateTime transactionTime, Long accountId, Long clientId, BigDecimal balanceAfterTransaction) {
+    public TransactionDTO(String type, BigDecimal amount, String description, ZonedDateTime transactionTime) {
+        this(null, type, amount, description, transactionTime, null, null, null);
+    }
 }
