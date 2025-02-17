@@ -11,7 +11,7 @@ public class AmountConverter implements AttributeConverter<Amount, BigDecimal> {
 
     @Override
     public BigDecimal convertToDatabaseColumn(Amount amount) {
-        return amount == null ? null : amount.amount();
+        return amount == null ? null : amount.value();
     }
 
     @Override

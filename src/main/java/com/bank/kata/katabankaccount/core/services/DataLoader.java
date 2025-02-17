@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 
 import java.math.BigDecimal;
+import java.time.ZonedDateTime;
 
 
 @KataDataLoader
@@ -49,6 +50,7 @@ public class DataLoader implements CommandLineRunner {
                 .description("Initial deposit")
                 .amount(Amount.of(BigDecimal.valueOf(500)))
                 .account(account)
+                .transactionTime(ZonedDateTime.now())
                 .build();
 
         transactionService.createTransaction(accountId, deposit);
@@ -59,6 +61,7 @@ public class DataLoader implements CommandLineRunner {
                 .description("ATM withdrawal")
                 .amount(Amount.of(BigDecimal.valueOf(200)))
                 .account(account)
+                .transactionTime(ZonedDateTime.now())
                 .build();
         transactionService.createTransaction(accountId, withdrawal);
     }

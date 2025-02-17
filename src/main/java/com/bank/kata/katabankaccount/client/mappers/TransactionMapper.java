@@ -9,7 +9,7 @@ import org.mapstruct.Mapping;
 public interface TransactionMapper {
     @Mapping(source = "account.id", target = "accountId")
     @Mapping(source = "account.client.id", target = "clientId")
-    @Mapping(source = "account.balance.amount", target = "balanceAfterTransaction")
+    @Mapping(source = "account.balance.value", target = "balanceAfterTransaction")
     TransactionDTO toTransactionResponse(Transaction source);
 
     @Mapping(target = "account", ignore = true)

@@ -7,7 +7,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 
 @Slf4j
-public record Amount(BigDecimal amount) {
+public record Amount(BigDecimal value) {
     private static final RoundingMode DEFAULT_ROUNDING = RoundingMode.HALF_EVEN;
     private static final int DEFAULT_SCALE = 2;
 
@@ -20,15 +20,15 @@ public record Amount(BigDecimal amount) {
     }
 
     public Amount add(Amount other) {
-        return new Amount(this.amount.add(other.amount));
+        return new Amount(this.value.add(other.value));
     }
 
     public Amount subtract(Amount other) {
-        if (this.amount.subtract(other.amount).compareTo(Amount.zero().amount) < 0) {
+        if (this.value.subtract(other.value).compareTo(Amount.zero().value) < 0) {
             log.info("Insufficient account balance");
             throw new InsufficientBalanceException("You don't have enough money to make this operation");
         } else {
-            return new Amount(this.amount.subtract(other.amount));
+            return new Amount(this.value.subtract(other.value));
         }
     }
 }

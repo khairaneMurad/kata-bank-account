@@ -11,11 +11,11 @@ import org.mapstruct.Mapping;
 public interface AccountMapper {
     @Mapping(source = "client.id", target = "clientId")
     @Mapping(source = "transactions", target = "transactionIds")
-    @Mapping(source = "balance.amount", target = "balance")
+    @Mapping(source = "balance.value", target = "balance")
     AccountDTO toAccountResponse(Account source);
 
     @Mapping(target = "client", ignore = true)
     @Mapping(target = "transactions", ignore = true)
-    @Mapping(source = "balance", target = "balance.amount")
+    @Mapping(source = "balance", target = "balance.value")
     Account toAccount(AccountDTO source);
 }

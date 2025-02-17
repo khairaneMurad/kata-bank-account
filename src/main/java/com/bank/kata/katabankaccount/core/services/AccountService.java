@@ -50,11 +50,11 @@ public class AccountService {
         log.info("----------------");
 
         statements.forEach(statement -> {
-            if (statement.amount() != null) {
+            if (statement.transactionAmount() != null) {
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
                 log.info("Date: {}, Amount: {}, Type: {}, Description: {}",
                         statement.transactionTime().format(formatter.withZone(ZoneId.of("Europe/Paris"))),
-                        statement.amount().amount(),
+                        statement.transactionAmount().value(),
                         statement.transactionType(),
                         statement.description());
             }

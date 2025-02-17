@@ -10,7 +10,7 @@ public record AccountStatement(
     String lastName,
     String accountType,
     Amount balance,
-    Amount amount,
+    Amount transactionAmount,
     TransactionType transactionType,
     ZonedDateTime transactionTime,
     String description

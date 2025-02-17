@@ -69,7 +69,7 @@ class AccountServiceTest {
         assertNotNull(result);
         assertEquals(client, result.getClient());
         assertEquals("SAVINGS", result.getType());
-        assertEquals(new BigDecimal("1000.50"), result.getBalance().amount());
+        assertEquals(new BigDecimal("1000.50"), result.getBalance().value());
 
         verify(clientGateway).search(clientId);
         verify(accountGateway).createOrUpdate(account);

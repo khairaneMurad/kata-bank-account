@@ -168,21 +168,20 @@ class AccountControllerIntegrationTest extends TestContainersConfig {
         mockMvc.perform(get(STATEMENTS_URI, createdAccount.getId())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].firstName").value(createdClient.getFirstName()))
-                .andExpect(jsonPath("$[0].lastName").value(createdClient.getLastName()))
-                .andExpect(jsonPath("$[0].balance.amount").value(expectedTotalBalance))
-                .andExpect(jsonPath("$[0].amount.amount").value(t1.amount()))
-                .andExpect(jsonPath("$[0].transactionType").value(t1.type()))
-                .andExpect(jsonPath("$[0].description").value(t1.description()))
-                .andExpect(jsonPath("$[0].transactionTime").value(t1Time.toInstant().toString()))
+                .andExpect(jsonPath("$.firstName").value(createdClient.getFirstName()))
+                .andExpect(jsonPath("$.lastName").value(createdClient.getLastName()))
+                .andExpect(jsonPath("$.balance").value(expectedTotalBalance))
+                .andExpect(jsonPath("$.accountType").value("COMPTE COURANT"))
 
-                .andExpect(jsonPath("$[1].firstName").value(createdClient.getFirstName()))
-                .andExpect(jsonPath("$[1].lastName").value(createdClient.getLastName()))
-                .andExpect(jsonPath("$[1].balance.amount").value(expectedTotalBalance))
-                .andExpect(jsonPath("$[1].amount.amount").value(t2.amount()))
-                .andExpect(jsonPath("$[1].transactionType").value(t2.type()))
-                .andExpect(jsonPath("$[1].description").value(t2.description()))
-                .andExpect(jsonPath("$[1].transactionTime").value(t2Time.toInstant().toString()));
+                .andExpect(jsonPath("$.transactions[0].transactionAmount").value(t1.amount()))
+                .andExpect(jsonPath("$.transactions[0].transactionType").value(t1.type()))
+                .andExpect(jsonPath("$.transactions[0].description").value(t1.description()))
+                .andExpect(jsonPath("$.transactions[0].transactionTime").value(t1Time.toInstant().toString()))
+
+                .andExpect(jsonPath("$.transactions[1].transactionAmount").value(t2.amount()))
+                .andExpect(jsonPath("$.transactions[1].transactionType").value(t2.type()))
+                .andExpect(jsonPath("$.transactions[1].description").value(t2.description()))
+                .andExpect(jsonPath("$.transactions[1].transactionTime").value(t2Time.toInstant().toString()));
     }
 
     @Test
@@ -193,12 +192,16 @@ class AccountControllerIntegrationTest extends TestContainersConfig {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk()).andReturn();
 
-        List<AccountStatementDTO> statement = objectMapper.readValue(
+        AccountStatementDTO statement = objectMapper.readValue(
                 result.getResponse().getContentAsString(),
                 new TypeReference<>() {});
 
         assertThat(statement)
-                .extracting("transactionType", "description", "amount", "transactionTime")
+                .extracting("firstName", "lastName", "accountType", "balance")
+                .containsExactly("toto", "toto", "COMPTE COURANT", new BigDecimal("1000.00"));
+
+        assertThat(statement.transactions())
+                .extracting("transactionType", "description", "transactionAmount", "transactionTime")
                 .containsExactlyElementsOf(List.of(tuple(null, null, null, null)));
     }
 
@@ -208,11 +211,7 @@ class AccountControllerIntegrationTest extends TestContainersConfig {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk()).andReturn();
 
-        List<AccountStatementDTO> statement = objectMapper.readValue(
-                result.getResponse().getContentAsString(),
-                new TypeReference<>() {});
-
-        assertThat(statement).isEmpty(); 
+        assertThat(result.getResponse().getContentAsString()).isEmpty();
     }
 
     private Account getCreatedAccount(Client createdClient) throws DataNotFoundException {
